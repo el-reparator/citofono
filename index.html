@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rilevatore Sonoro</title>
+    <title>Rilevatore Sonoro con Email</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -20,16 +20,29 @@
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { color: #333; margin-bottom: 20px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
         .status {
             background: #f3f4f6;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
         }
+        .status-item { text-align: center; }
+        .status-label { font-size: 12px; color: #6b7280; }
+        .status-value { font-size: 18px; font-weight: bold; color: #1f2937; }
         .audio-bar {
             width: 100%;
             height: 30px;
@@ -80,6 +93,31 @@
             margin-bottom: 20px;
         }
         .section h2 { font-size: 18px; color: #374151; margin-bottom: 15px; }
+        .email-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .email-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .email-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .email-input-group button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
         .list { display: flex; flex-direction: column; gap: 10px; }
         .list-item {
             background: white;
@@ -90,32 +128,129 @@
             align-items: center;
         }
         .slider { width: 100%; margin: 10px 0; }
-        .console {
-            background: #1f2937;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
         .alert {
             background: #fef3c7;
             border: 2px solid #f59e0b;
             padding: 15px;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 10px 0;
+        }
+        .alert.info {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+        .alert.success {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        .email-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .email-status.sending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .email-status.sent {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .email-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .setup-guide {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .setup-guide h3 {
+            color: #0c4a6e;
+            margin-bottom: 10px;
+        }
+        .setup-guide ol {
+            margin-left: 20px;
+            color: #075985;
+        }
+        .setup-guide li {
+            margin-bottom: 8px;
+        }
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+        }
+        .save-config {
+            background: #0ea5e9;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔔 Rilevatore Sonoro</h1>
-        
+        <span class="badge">📧 EMAIL AUTOMATICHE ATTIVE</span>
+
+        <!-- Setup EmailJS -->
+        <div class="setup-guide" id="setupGuide">
+            <h3>⚙️ Configurazione Email (una sola volta)</h3>
+            <ol>
+                <li>Vai su <strong>emailjs.com</strong> e crea un account gratuito</li>
+                <li>Aggiungi un servizio email (Gmail consigliato)</li>
+                <li>Crea un template con queste variabili:
+                    <ul>
+                        <li><code>{{sound_name}}</code></li>
+                        <li><code>{{detection_time}}</code></li>
+                        <li><code>{{to_email}}</code></li>
+                    </ul>
+                </li>
+                <li>Inserisci le credenziali qui sotto:</li>
+            </ol>
+            <input type="text" class="config-input" id="serviceId" placeholder="Service ID (es: service_xxx)">
+            <input type="text" class="config-input" id="templateId" placeholder="Template ID (es: template_xxx)">
+            <input type="text" class="config-input" id="publicKey" placeholder="Public Key (es: xxx-xxxx-xxx)">
+            <button class="save-config" onclick="saveEmailConfig()">💾 Salva Configurazione</button>
+            <div class="alert info" style="margin-top: 15px;">
+                <strong>ℹ️ Nota:</strong> Limite gratuito: 200 email/mese
+            </div>
+        </div>
+
         <div class="status">
-            <span>Stato: <strong id="status">Inattivo</strong></span>
-            <span>Pattern: <strong id="patternCount">0</strong></span>
+            <div class="status-item">
+                <div class="status-label">Stato</div>
+                <div class="status-value" id="status">Inattivo</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Pattern</div>
+                <div class="status-value" id="patternCount">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Email</div>
+                <div class="status-value" id="emailCount">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Rilevamenti</div>
+                <div class="status-value" id="detectionCount">0</div>
+            </div>
         </div>
 
         <div class="audio-bar">
@@ -126,6 +261,17 @@
         <div class="controls">
             <button class="btn btn-green" id="listenBtn">🎤 Avvia Ascolto</button>
             <button class="btn btn-blue" id="recordBtn">⏺️ Registra Suono</button>
+        </div>
+
+        <div class="section">
+            <h2>📧 Email per Notifiche</h2>
+            <div class="email-input-group">
+                <input type="email" id="emailInput" placeholder="esempio@email.com">
+                <button onclick="addEmail()">Aggiungi</button>
+            </div>
+            <div class="list" id="emailList">
+                <div class="alert">⚠️ Aggiungi almeno un indirizzo email</div>
+            </div>
         </div>
 
         <div class="section">
@@ -142,25 +288,24 @@
         </div>
 
         <div class="section">
-            <h2>✅ Rilevamenti</h2>
+            <h2>✅ Rilevamenti e Notifiche</h2>
             <div class="list" id="detectionList">
-                <div class="alert" style="background:#e0e7ff;border-color:#6366f1">
-                    ℹ️ I suoni rilevati appariranno qui
+                <div class="alert info">
+                    ℹ️ I rilevamenti appariranno qui con lo stato dell'invio email
                 </div>
             </div>
         </div>
-
-        <div class="section">
-            <h2>🖥️ Console</h2>
-            <div class="console" id="console"></div>
-        </div>
     </div>
 
+    <!-- EmailJS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <script>
         let isListening = false, isRecording = false;
         let audioContext, analyser, stream, animationFrame;
-        let recordedPattern = [], soundPatterns = [], detectionCount = 0;
-        let threshold = 0.5, lastDetection = 0;
+        let recordedPattern = [], soundPatterns = [], emailList = [];
+        let threshold = 0.5, lastDetection = 0, detectionTotal = 0;
+        let emailConfig = { serviceId: '', templateId: '', publicKey: '' };
 
         const els = {
             listenBtn: document.getElementById('listenBtn'),
@@ -169,21 +314,123 @@
             audioText: document.getElementById('audioText'),
             status: document.getElementById('status'),
             patternCount: document.getElementById('patternCount'),
+            emailCount: document.getElementById('emailCount'),
+            detectionCount: document.getElementById('detectionCount'),
             patternList: document.getElementById('patternList'),
             detectionList: document.getElementById('detectionList'),
-            console: document.getElementById('console'),
+            emailList: document.getElementById('emailList'),
+            emailInput: document.getElementById('emailInput'),
             threshold: document.getElementById('threshold'),
-            thresholdValue: document.getElementById('thresholdValue')
+            thresholdValue: document.getElementById('thresholdValue'),
+            setupGuide: document.getElementById('setupGuide')
         };
 
-        function log(msg, color = '#10b981') {
-            const line = document.createElement('div');
-            line.style.color = color;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            els.console.appendChild(line);
-            els.console.scrollTop = els.console.scrollHeight;
+        // Carica dati salvati
+        function loadData() {
+            const saved = localStorage.getItem('soundDetectorData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                emailList = data.emailList || [];
+                soundPatterns = data.soundPatterns || [];
+                emailConfig = data.emailConfig || emailConfig;
+                
+                if (emailConfig.publicKey) {
+                    emailjs.init(emailConfig.publicKey);
+                    els.setupGuide.style.display = 'none';
+                }
+                
+                updateUI();
+            }
         }
 
+        // Salva configurazione email
+        window.saveEmailConfig = function() {
+            emailConfig.serviceId = document.getElementById('serviceId').value;
+            emailConfig.templateId = document.getElementById('templateId').value;
+            emailConfig.publicKey = document.getElementById('publicKey').value;
+
+            if (!emailConfig.serviceId || !emailConfig.templateId || !emailConfig.publicKey) {
+                alert('Compila tutti i campi!');
+                return;
+            }
+
+            emailjs.init(emailConfig.publicKey);
+            saveData();
+            els.setupGuide.style.display = 'none';
+            alert('✅ Configurazione salvata! Le email saranno inviate automaticamente.');
+        };
+
+        // Salva dati
+        function saveData() {
+            localStorage.setItem('soundDetectorData', JSON.stringify({
+                emailList,
+                soundPatterns,
+                emailConfig
+            }));
+        }
+
+        // Invia email a tutti i destinatari
+        async function sendEmailNotifications(soundName) {
+            if (!emailConfig.publicKey || emailList.length === 0) {
+                console.log('Email non configurate');
+                return { success: false, count: 0 };
+            }
+
+            const time = new Date().toLocaleString('it-IT');
+            const promises = emailList.map(email => {
+                return emailjs.send(
+                    emailConfig.serviceId,
+                    emailConfig.templateId,
+                    {
+                        to_email: email,
+                        sound_name: soundName,
+                        detection_time: time
+                    }
+                );
+            });
+
+            try {
+                await Promise.all(promises);
+                console.log(`✅ ${emailList.length} email inviate con successo`);
+                return { success: true, count: emailList.length };
+            } catch (error) {
+                console.error('❌ Errore invio email:', error);
+                return { success: false, error: error.message, count: 0 };
+            }
+        }
+
+        // Aggiungi email
+        window.addEmail = function() {
+            const email = els.emailInput.value.trim();
+            if (!email || !email.includes('@')) {
+                alert('Email non valida!');
+                return;
+            }
+            if (emailList.includes(email)) {
+                alert('Email già presente!');
+                return;
+            }
+            emailList.push(email);
+            els.emailInput.value = '';
+            saveData();
+            updateUI();
+        };
+
+        // Rimuovi email
+        window.removeEmail = function(email) {
+            emailList = emailList.filter(e => e !== email);
+            saveData();
+            updateUI();
+        };
+
+        // Rimuovi pattern
+        window.removePattern = function(id) {
+            soundPatterns = soundPatterns.filter(p => p.id !== id);
+            saveData();
+            updateUI();
+        };
+
+        // Richiedi microfono
         async function requestMic() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -191,20 +438,20 @@
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 2048;
                 audioContext.createMediaStreamSource(stream).connect(analyser);
-                log('✅ Microfono attivato!');
                 return true;
             } catch (e) {
-                log('❌ Errore microfono: ' + e.message, '#ef4444');
-                alert('Permesso microfono negato!');
+                alert('Permesso microfono negato! Clicca sull\'icona 🔒 nella barra indirizzi e consenti il microfono.');
                 return false;
             }
         }
 
+        // Threshold slider
         els.threshold.oninput = (e) => {
             threshold = e.target.value / 100;
             els.thresholdValue.textContent = e.target.value + '%';
         };
 
+        // Listen button
         els.listenBtn.onclick = async () => {
             if (isListening) {
                 isListening = false;
@@ -218,15 +465,19 @@
                     alert('Prima registra almeno un suono!');
                     return;
                 }
+                if (emailList.length === 0) {
+                    const confirm = window.confirm('Nessuna email configurata. Vuoi continuare senza notifiche email?');
+                    if (!confirm) return;
+                }
                 isListening = true;
                 els.listenBtn.textContent = '🛑 Ferma';
                 els.listenBtn.classList.add('active');
                 els.status.textContent = 'In ascolto...';
-                log('🎤 Ascolto avviato');
                 analyze();
             }
         };
 
+        // Record button
         els.recordBtn.onclick = async () => {
             if (isRecording) {
                 if (recordedPattern.length < 20) {
@@ -240,11 +491,11 @@
                     name,
                     data: recordedPattern
                 });
-                log(`✅ Pattern "${name}" salvato (${recordedPattern.length} frames)`);
                 isRecording = false;
                 els.recordBtn.textContent = '⏺️ Registra Suono';
                 els.recordBtn.classList.remove('recording');
                 recordedPattern = [];
+                saveData();
                 updateUI();
             } else {
                 if (!stream && !await requestMic()) return;
@@ -252,11 +503,11 @@
                 isRecording = true;
                 els.recordBtn.textContent = '💾 Salva';
                 els.recordBtn.classList.add('recording');
-                log('📼 Registrazione... FAI IL SUONO ORA!', '#f59e0b');
                 analyze();
             }
         };
 
+        // Analizza audio
         function analyze() {
             if (!analyser) return;
             const data = new Uint8Array(analyser.frequencyBinCount);
@@ -287,12 +538,8 @@
                     const match = score / count;
                     if (match > threshold && avg > 15 && Date.now() - lastDetection > 3000) {
                         lastDetection = Date.now();
-                        detectionCount++;
-                        log(`🎉 RILEVATO: ${pattern.name} (${(match*100).toFixed(0)}%)`);
-                        addDetection(pattern.name, match);
-                        if (Notification.permission === 'granted') {
-                            new Notification('🔔 Suono Rilevato!', { body: pattern.name });
-                        }
+                        detectionTotal++;
+                        handleDetection(pattern.name, match);
                     }
                 });
             }
@@ -300,8 +547,65 @@
             animationFrame = requestAnimationFrame(analyze);
         }
 
+        // Gestisci rilevamento
+        async function handleDetection(soundName, score) {
+            console.log(`🎉 Rilevato: ${soundName}`);
+            
+            // Notifica browser
+            if (Notification.permission === 'granted') {
+                new Notification('🔔 Suono Rilevato!', { 
+                    body: `${soundName} - Invio email in corso...` 
+                });
+            }
+
+            // Crea elemento rilevamento
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `
+                <div>
+                    <strong>${soundName}</strong><br>
+                    <small>${new Date().toLocaleTimeString()}</small>
+                </div>
+                <span class="email-status sending" id="status-${detectionTotal}">📧 Invio...</span>
+            `;
+            els.detectionList.insertBefore(item, els.detectionList.firstChild);
+
+            // Invia email
+            const result = await sendEmailNotifications(soundName);
+            const statusEl = document.getElementById(`status-${detectionTotal}`);
+            
+            if (result.success) {
+                statusEl.className = 'email-status sent';
+                statusEl.textContent = `✅ ${result.count} email`;
+            } else if (result.count === 0) {
+                statusEl.className = 'email-status';
+                statusEl.textContent = '⏭️ No email';
+            } else {
+                statusEl.className = 'email-status error';
+                statusEl.textContent = '❌ Errore';
+            }
+
+            els.detectionCount.textContent = detectionTotal;
+        }
+
+        // Aggiorna UI
         function updateUI() {
             els.patternCount.textContent = soundPatterns.length;
+            els.emailCount.textContent = emailList.length;
+
+            // Email list
+            if (emailList.length === 0) {
+                els.emailList.innerHTML = '<div class="alert">⚠️ Aggiungi almeno un indirizzo email</div>';
+            } else {
+                els.emailList.innerHTML = emailList.map(email => `
+                    <div class="list-item">
+                        <span>${email}</span>
+                        <button onclick="removeEmail('${email}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">✕</button>
+                    </div>
+                `).join('');
+            }
+
+            // Pattern list
             if (soundPatterns.length === 0) {
                 els.patternList.innerHTML = '<div class="alert">⚠️ Nessun pattern</div>';
             } else {
@@ -314,27 +618,13 @@
             }
         }
 
-        function addDetection(name, score) {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            item.innerHTML = `
-                <span><strong>${name}</strong><br><small>${new Date().toLocaleTimeString()}</small></span>
-                <span>${(score*100).toFixed(0)}%</span>
-            `;
-            els.detectionList.insertBefore(item, els.detectionList.firstChild);
-        }
-
-        window.removePattern = (id) => {
-            soundPatterns = soundPatterns.filter(p => p.id !== id);
-            updateUI();
-            log('🗑️ Pattern rimosso');
-        };
-
+        // Richiedi notifiche
         if (Notification.permission === 'default') {
             Notification.requestPermission();
         }
 
-        log('✅ Sistema pronto');
+        // Init
+        loadData();
         updateUI();
     </script>
 </body>
