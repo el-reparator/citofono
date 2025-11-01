@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rilevatore Sonoro</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔔 Rilevatore Sonoro</h1>
+            <div class="status">
+                <span class="status-label">Stato:</span>
+                <span id="status" class="status-value">Inattivo</span>
+            </div>
+        </header>
+
+        <!-- Livello Audio -->
+        <div class="audio-level-container">
+            <div class="audio-level-label">
+                <span>Livello Audio</span>
+                <span id="audioLevelText">0%</span>
+            </div>
+            <div class="audio-level-bar">
+                <div id="audioLevelFill" class="audio-level-fill"></div>
+            </div>
+        </div>
+
+        <!-- Controlli Principali -->
+        <div class="controls">
+            <button id="listenBtn" class="btn btn-primary">
+                <span class="btn-icon">🎤</span>
+                Avvia Ascolto
+            </button>
+            <button id="recordBtn" class="btn btn-secondary">
+                <span class="btn-icon">⏺️</span>
+                Registra Suono
+            </button>
+        </div>
+
+        <!-- Gestione Email -->
+        <div class="section">
+            <h2>📧 Email per Notifiche</h2>
+            <div class="email-input-group">
+                <input type="email" id="emailInput" placeholder="esempio@email.com">
+                <button id="addEmailBtn" class="btn btn-small">Aggiungi</button>
+            </div>
+            <div id="emailList" class="list"></div>
+        </div>
+
+        <!-- Pattern Salvati -->
+        <div class="section">
+            <h2>🎵 Suoni Registrati</h2>
+            <div id="patternList" class="list"></div>
+        </div>
+
+        <!-- Rilevazioni -->
+        <div class="section">
+            <h2>✅ Suoni Rilevati</h2>
+            <div id="detectionList" class="list detection-list"></div>
+        </div>
+
+        <!-- Istruzioni -->
+        <div class="info-box">
+            <h3>ℹ️ Come usare l'app:</h3>
+            <ol>
+                <li>Clicca "Registra Suono" e produci il suono da rilevare</li>
+                <li>Clicca "Salva Pattern" e assegna un nome</li>
+                <li>Aggiungi le email per le notifiche</li>
+                <li>Clicca "Avvia Ascolto" per iniziare</li>
+                <li>L'app rileverà automaticamente i suoni registrati</li>
+            </ol>
+            <p class="note">Nota: Per l'invio email reale è necessario un backend server.</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
