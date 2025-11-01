@@ -4,79 +4,338 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rilevatore Sonoro</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        .status {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .audio-bar {
+            width: 100%;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .audio-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 0.1s;
+        }
+        .audio-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s;
+        }
+        .btn-green { background: #10b981; }
+        .btn-green:hover { background: #059669; }
+        .btn-green.active { background: #ef4444; }
+        .btn-blue { background: #3b82f6; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-blue.recording { background: #f59e0b; }
+        .section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .section h2 { font-size: 18px; color: #374151; margin-bottom: 15px; }
+        .list { display: flex; flex-direction: column; gap: 10px; }
+        .list-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slider { width: 100%; margin: 10px 0; }
+        .console {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .alert {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🔔 Rilevatore Sonoro</h1>
-            <div class="status">
-                <span class="status-label">Stato:</span>
-                <span id="status" class="status-value">Inattivo</span>
-            </div>
-        </header>
-
-        <!-- Livello Audio -->
-        <div class="audio-level-container">
-            <div class="audio-level-label">
-                <span>Livello Audio</span>
-                <span id="audioLevelText">0%</span>
-            </div>
-            <div class="audio-level-bar">
-                <div id="audioLevelFill" class="audio-level-fill"></div>
-            </div>
+        <h1>🔔 Rilevatore Sonoro</h1>
+        
+        <div class="status">
+            <span>Stato: <strong id="status">Inattivo</strong></span>
+            <span>Pattern: <strong id="patternCount">0</strong></span>
         </div>
 
-        <!-- Controlli Principali -->
+        <div class="audio-bar">
+            <div class="audio-fill" id="audioFill"></div>
+            <div class="audio-text" id="audioText">0%</div>
+        </div>
+
         <div class="controls">
-            <button id="listenBtn" class="btn btn-primary">
-                <span class="btn-icon">🎤</span>
-                Avvia Ascolto
-            </button>
-            <button id="recordBtn" class="btn btn-secondary">
-                <span class="btn-icon">⏺️</span>
-                Registra Suono
-            </button>
+            <button class="btn btn-green" id="listenBtn">🎤 Avvia Ascolto</button>
+            <button class="btn btn-blue" id="recordBtn">⏺️ Registra Suono</button>
         </div>
 
-        <!-- Gestione Email -->
         <div class="section">
-            <h2>📧 Email per Notifiche</h2>
-            <div class="email-input-group">
-                <input type="email" id="emailInput" placeholder="esempio@email.com">
-                <button id="addEmailBtn" class="btn btn-small">Aggiungi</button>
-            </div>
-            <div id="emailList" class="list"></div>
+            <h2>⚙️ Sensibilità</h2>
+            <input type="range" class="slider" id="threshold" min="30" max="90" value="50">
+            <span>Soglia: <strong id="thresholdValue">50%</strong></span>
         </div>
 
-        <!-- Pattern Salvati -->
         <div class="section">
             <h2>🎵 Suoni Registrati</h2>
-            <div id="patternList" class="list"></div>
+            <div class="list" id="patternList">
+                <div class="alert">⚠️ Clicca "Registra Suono" per iniziare</div>
+            </div>
         </div>
 
-        <!-- Rilevazioni -->
         <div class="section">
-            <h2>✅ Suoni Rilevati</h2>
-            <div id="detectionList" class="list detection-list"></div>
+            <h2>✅ Rilevamenti</h2>
+            <div class="list" id="detectionList">
+                <div class="alert" style="background:#e0e7ff;border-color:#6366f1">
+                    ℹ️ I suoni rilevati appariranno qui
+                </div>
+            </div>
         </div>
 
-        <!-- Istruzioni -->
-        <div class="info-box">
-            <h3>ℹ️ Come usare l'app:</h3>
-            <ol>
-                <li>Clicca "Registra Suono" e produci il suono da rilevare</li>
-                <li>Clicca "Salva Pattern" e assegna un nome</li>
-                <li>Aggiungi le email per le notifiche</li>
-                <li>Clicca "Avvia Ascolto" per iniziare</li>
-                <li>L'app rileverà automaticamente i suoni registrati</li>
-            </ol>
-            <p class="note">Nota: Per l'invio email reale è necessario un backend server.</p>
+        <div class="section">
+            <h2>🖥️ Console</h2>
+            <div class="console" id="console"></div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        let isListening = false, isRecording = false;
+        let audioContext, analyser, stream, animationFrame;
+        let recordedPattern = [], soundPatterns = [], detectionCount = 0;
+        let threshold = 0.5, lastDetection = 0;
+
+        const els = {
+            listenBtn: document.getElementById('listenBtn'),
+            recordBtn: document.getElementById('recordBtn'),
+            audioFill: document.getElementById('audioFill'),
+            audioText: document.getElementById('audioText'),
+            status: document.getElementById('status'),
+            patternCount: document.getElementById('patternCount'),
+            patternList: document.getElementById('patternList'),
+            detectionList: document.getElementById('detectionList'),
+            console: document.getElementById('console'),
+            threshold: document.getElementById('threshold'),
+            thresholdValue: document.getElementById('thresholdValue')
+        };
+
+        function log(msg, color = '#10b981') {
+            const line = document.createElement('div');
+            line.style.color = color;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            els.console.appendChild(line);
+            els.console.scrollTop = els.console.scrollHeight;
+        }
+
+        async function requestMic() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                audioContext.createMediaStreamSource(stream).connect(analyser);
+                log('✅ Microfono attivato!');
+                return true;
+            } catch (e) {
+                log('❌ Errore microfono: ' + e.message, '#ef4444');
+                alert('Permesso microfono negato!');
+                return false;
+            }
+        }
+
+        els.threshold.oninput = (e) => {
+            threshold = e.target.value / 100;
+            els.thresholdValue.textContent = e.target.value + '%';
+        };
+
+        els.listenBtn.onclick = async () => {
+            if (isListening) {
+                isListening = false;
+                els.listenBtn.textContent = '🎤 Avvia Ascolto';
+                els.listenBtn.classList.remove('active');
+                els.status.textContent = 'Inattivo';
+                cancelAnimationFrame(animationFrame);
+            } else {
+                if (!stream && !await requestMic()) return;
+                if (soundPatterns.length === 0) {
+                    alert('Prima registra almeno un suono!');
+                    return;
+                }
+                isListening = true;
+                els.listenBtn.textContent = '🛑 Ferma';
+                els.listenBtn.classList.add('active');
+                els.status.textContent = 'In ascolto...';
+                log('🎤 Ascolto avviato');
+                analyze();
+            }
+        };
+
+        els.recordBtn.onclick = async () => {
+            if (isRecording) {
+                if (recordedPattern.length < 20) {
+                    alert('Registra almeno 1 secondo!');
+                    return;
+                }
+                const name = prompt('Nome del suono:');
+                if (!name) return;
+                soundPatterns.push({
+                    id: Date.now(),
+                    name,
+                    data: recordedPattern
+                });
+                log(`✅ Pattern "${name}" salvato (${recordedPattern.length} frames)`);
+                isRecording = false;
+                els.recordBtn.textContent = '⏺️ Registra Suono';
+                els.recordBtn.classList.remove('recording');
+                recordedPattern = [];
+                updateUI();
+            } else {
+                if (!stream && !await requestMic()) return;
+                recordedPattern = [];
+                isRecording = true;
+                els.recordBtn.textContent = '💾 Salva';
+                els.recordBtn.classList.add('recording');
+                log('📼 Registrazione... FAI IL SUONO ORA!', '#f59e0b');
+                analyze();
+            }
+        };
+
+        function analyze() {
+            if (!analyser) return;
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(data);
+            const avg = data.reduce((a,b) => a+b) / data.length;
+            const pct = Math.min(Math.round(avg), 100);
+            
+            els.audioFill.style.width = pct + '%';
+            els.audioText.textContent = pct + '%';
+
+            if (isRecording) {
+                recordedPattern.push({ freq: Array.from(data), level: avg });
+            }
+
+            if (isListening) {
+                soundPatterns.forEach(pattern => {
+                    let score = 0, count = 0;
+                    pattern.data.forEach((frame, i) => {
+                        if (i % 10 === 0) {
+                            let matches = 0;
+                            for (let j = 0; j < data.length; j += 5) {
+                                if (Math.abs(frame.freq[j] - data[j]) < 50) matches++;
+                            }
+                            score += matches / (data.length / 5);
+                            count++;
+                        }
+                    });
+                    const match = score / count;
+                    if (match > threshold && avg > 15 && Date.now() - lastDetection > 3000) {
+                        lastDetection = Date.now();
+                        detectionCount++;
+                        log(`🎉 RILEVATO: ${pattern.name} (${(match*100).toFixed(0)}%)`);
+                        addDetection(pattern.name, match);
+                        if (Notification.permission === 'granted') {
+                            new Notification('🔔 Suono Rilevato!', { body: pattern.name });
+                        }
+                    }
+                });
+            }
+
+            animationFrame = requestAnimationFrame(analyze);
+        }
+
+        function updateUI() {
+            els.patternCount.textContent = soundPatterns.length;
+            if (soundPatterns.length === 0) {
+                els.patternList.innerHTML = '<div class="alert">⚠️ Nessun pattern</div>';
+            } else {
+                els.patternList.innerHTML = soundPatterns.map(p => `
+                    <div class="list-item">
+                        <span>${p.name}</span>
+                        <button onclick="removePattern(${p.id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">✕</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function addDetection(name, score) {
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `
+                <span><strong>${name}</strong><br><small>${new Date().toLocaleTimeString()}</small></span>
+                <span>${(score*100).toFixed(0)}%</span>
+            `;
+            els.detectionList.insertBefore(item, els.detectionList.firstChild);
+        }
+
+        window.removePattern = (id) => {
+            soundPatterns = soundPatterns.filter(p => p.id !== id);
+            updateUI();
+            log('🗑️ Pattern rimosso');
+        };
+
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        log('✅ Sistema pronto');
+        updateUI();
+    </script>
 </body>
 </html>
